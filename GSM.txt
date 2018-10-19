@@ -61,14 +61,15 @@ void loop() {
           digitalWrite(8, HIGH);
           delay(500);
           digitalWrite(8, LOW);
+          sendSMS("+79202979541", "Pressed");
         }
       if (result.equals("getTemperature")) {
         float temp = getTemperature();
         String tempp = (String) temp;
-        sendSMS("79202979541", "temp: " + tempp);
+        sendSMS("+79202979541", "Temperature: " + tempp);
         }
       
-      sendATCommand("AT+CMGD=4", true); // Удалить все сообщения, чтобы не забивали память модуля
+    //  sendATCommand("AT+CMGD=4", true); // Удалить все сообщения, чтобы не забивали память модуля
     }
   }
   if (Serial.available())  {                    // Ожидаем команды по Serial...
@@ -102,13 +103,6 @@ float getTemperature() {
 
 void sendSMS(String phone, String message)
 {
-  sendATCommand("AT+CMGS=\"" + phone + "\"", true);    
-  delay(500);         
-  //sendATCommand(message + "\r\n" + (String)((char)26), true);
-  sendATCommand(message, true);
-  delay(500);
-  sendATCommand((String)(char)26, true);
-  delay(500);
-  Serial.println("SMS sent");
+  sendATCommand("AT+CMGS=\"" + phone + "\"", true);             // Переходим в режим ввода текстового сообщения
+  sendATCommand(message + "\r\n" + (String)((char)26), true);   // После текста отправляем перенос строки и Ctrl+Z
 }
-  
