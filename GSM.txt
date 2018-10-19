@@ -1,9 +1,8 @@
 #include <SoftwareSerial.h>    
-#include <stDHT.h> 
-SoftwareSerial SIM800(10, 11);                    // RX, TX
-DHT sens(DHT11);
+#include <OneWire.h>
 
-int tempPIN = 2; // пин датчика температуры
+OneWire tempVal(6);
+SoftwareSerial SIM800(10, 11);                    // RX, TX
 
 String _response = "";                          // Переменная для хранения ответа модуля
 void setup() {
@@ -64,8 +63,9 @@ void loop() {
           digitalWrite(8, LOW);
         }
       if (result.equals("getTemperature")) {
-        int temp = sens.readTemperature(tempPIN);
-        sendSMS("79202979541", "temp: " + temp);
+        float temp = getTemperature();
+        String tempp = (String) temp;
+        sendSMS("79202979541", "temp: " + tempp);
         }
       
       sendATCommand("AT+CMGD=4", true); // Удалить все сообщения, чтобы не забивали память модуля
@@ -76,9 +76,39 @@ void loop() {
   };
 }
 
+float getTemperature() {
+  byte data[2];
+  tempVal.reset(); // Начинаем взаимодействие со сброса всех предыдущих команд и параметров
+  tempVal.write(0xCC); // Даем датчику DS18b20 команду пропустить поиск по адресу. В нашем случае только одно устрйоство 
+  tempVal.write(0x44); // Даем датчику DS18b20 команду измерить температуру. Само значение температуры мы еще не получаем - датчик его положит во внутреннюю память
+   
+  delay(1000); // Микросхема измеряет температуру, а мы ждем.  
+   
+  tempVal.reset(); // Теперь готовимся получить значение измеренной температуры
+  tempVal.write(0xCC); 
+  tempVal.write(0xBE); // Просим передать нам значение регистров со значением температуры
+ 
+  // Получаем и считываем ответ
+  data[0] = tempVal.read(); // Читаем младший байт значения температуры
+  data[1] = tempVal.read(); // А теперь старший
+ 
+  // Формируем итоговое значение: 
+  //    - сперва "склеиваем" значение, 
+  //    - затем умножаем его на коэффициент, соответсвующий разрешающей способности (для 12 бит по умолчанию - это 0,0625)
+  float temperature =  ((data[1] << 8) | data[0]) * 0.0625;
+  return temperature;
+  }
+
 
 void sendSMS(String phone, String message)
 {
-  sendATCommand("AT+CMGS=\"" + phone + "\"", true);             // Переходим в режим ввода текстового сообщения
-  sendATCommand(message + "\r\n" + (String)((char)26), true);   // После текста отправляем перенос строки и Ctrl+Z
+  sendATCommand("AT+CMGS=\"" + phone + "\"", true);    
+  delay(500);         
+  //sendATCommand(message + "\r\n" + (String)((char)26), true);
+  sendATCommand(message, true);
+  delay(500);
+  sendATCommand((String)(char)26, true);
+  delay(500);
+  Serial.println("SMS sent");
 }
+  
