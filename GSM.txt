@@ -14,7 +14,14 @@ void setup() {
   pinMode(9,OUTPUT);
   pinMode(7,OUTPUT); // для реле
  // sendATCommand("AT", true);                    // Отправили AT для настройки скорости обмена данными
-  _response = sendATCommand("AT+CMGF=1;&W", true); // Включаем текстовый режима SMS (Text mode) и сразу сохраняем значение (AT&W)!
+ unsigned long startTime = millis();
+ _response = sendATCommand("AT+CMGF=1;&W", true);
+  while(_response.indexOf("OK") < 0) {
+     _response = sendATCommand("AT+CMGF=1;&W", true);     
+  }
+  Serial.print("SIM module have been loaded for ");      
+  Serial.println(millis() - startTime);
+  
 }
 
 String sendATCommand(String cmd, bool waiting) {
