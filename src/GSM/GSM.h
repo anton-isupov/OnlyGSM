@@ -16,6 +16,7 @@ class GSM : public ExtendedHardwareUnit {
         bool onResponse();
         bool onReady();
         String getResponse();
+        String getNumber();
     private:
         String sendATCommand(String value);
         String waitResponse();

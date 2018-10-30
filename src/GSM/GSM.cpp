@@ -55,6 +55,15 @@ String GSM::getResponse() {
   return result;
 }
 
+String GSM::getNumber() {
+  String response;
+  String number = "";
+  response = waitResponse();
+  if (response.indexOf("+CMT") > -1 && response.indexOf("+79202979541") > -1) number = "+79202979541";
+  if (response.indexOf("+CMT") > -1 && response.indexOf("+79503422666") > -1) number = "+79503422666";
+  return number;
+}
+
 void GSM::run()
 {
   if (this->serialInterface->available())
@@ -105,6 +114,8 @@ void GSM::sendSMS(String phone, String message)
   sendATCommand("AT+CMGS=\"" + phone + "\"");
   sendATCommand(message + "\r\n" + (String)((char)26));
 }
+
+
 GSM::~GSM() {
   Serial.print("Bye bye");
 }
