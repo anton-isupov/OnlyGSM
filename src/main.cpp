@@ -5,20 +5,28 @@
 const uint8_t RELE_START_HEAT_PIN = 8;
 const uint8_t RELE_STOP_HEAT_PIN = 9;
 
-const String IlyaNumber = "+79503422666";
-const String AntonNumber = "+79202979541";
+const String availableNumbers[2] = {
+    "+79503422666", 
+    "+79202979541"
+};
+
+boolean checkNumberPermission(String number);
+void doActionForEachNumber(void (*callback)(String, String), String message);
+static void sendMessage(String phone, String message);
 
 GSM gsm(10,11);
 sensorTemperature sensor(6);
 
 void setup() {
+    Serial.begin(38400);
     sensor.setup();
     gsm.setup();
-    pinMode(8, OUTPUT);
+    pinMode(RELE_START_HEAT_PIN, OUTPUT);
+    Serial.println("Setuping...");
 
     if (gsm.onReady()) {
-    gsm.sendSMS(AntonNumber,"Ready to start"); 
-    gsm.sendSMS(IlyaNumber,"Ready to start"); 
+        Serial.println("GSM ready");
+        doActionForEachNumber(sendMessage, "Ready to start");
     }
 }
 void loop() {
@@ -28,20 +36,41 @@ void loop() {
         Serial.println(result);
         Serial.println(gsm.getResponse());
 
-        if (result.equals("startHeat") && (number.equals(IlyaNumber) || number.equals(AntonNumber))) {
+        if (result.equals("startHeat") && checkNumberPermission(number)) {
             digitalWrite(RELE_START_HEAT_PIN,HIGH);
             delay(500);
             digitalWrite(RELE_START_HEAT_PIN, LOW);
             gsm.sendSMS(number,"Pressed startHeat");
         }
-        if (result.equals("getTemperature") && (number.equals(IlyaNumber) || number.equals(AntonNumber))) {
-            digitalWrite(12, HIGH);
+        if (result.equals("getTemperature") && checkNumberPermission(number)) {
             String temp = (String) sensor.getTemperature();
             gsm.sendSMS(number,"Temperature: " + temp);
         }
-        if (result.equals("stopHeat") && (number.equals(IlyaNumber) || number.equals(AntonNumber))) {
+        if (result.equals("stopHeat") && checkNumberPermission(number)) {
             digitalWrite(RELE_STOP_HEAT_PIN,!digitalRead(RELE_STOP_HEAT_PIN));
             gsm.sendSMS(number,"Pressed stopHeat");
         }
     }
+}
+
+boolean checkNumberPermission(String number) {
+    for(unsigned int i=0; i<2; i++) {
+        if(number.equals(availableNumbers[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void doActionForEachNumber(void (*callback)(String, String), String message) {
+    Serial.println("Starting do for each");
+    for(unsigned int i=0; i<2; i++) {
+        Serial.println("Do callback for " + availableNumbers[i]);
+        callback(availableNumbers[i], message);
+    }
+}
+
+static void sendMessage(String phone, String message) {
+    gsm.sendSMS(phone, message);
+    delay(3000);
 }

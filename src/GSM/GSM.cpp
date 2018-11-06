@@ -13,8 +13,7 @@ void GSM::setRxTx(uint8_t Rx, uint8_t Tx) {
 
 void GSM::setup()
 {
-  this->serialInterface->begin(9600);
- // String response = sendATCommand("AT+CMGF=1;&W");
+  this->serialInterface->begin(38400);
 }
 
 bool GSM::onReady() {
@@ -22,7 +21,8 @@ bool GSM::onReady() {
   String response;
   response = sendATCommand("AT+CMGF=1;&W");
   while(response.indexOf("OK") < 0) {
-     response = sendATCommand("AT+CMGF=1;&W");     
+     response = sendATCommand("AT+CMGF=1;&W"); 
+     Serial.println(response);    
   }
   val = true;
   return val;
@@ -59,8 +59,10 @@ String GSM::getNumber() {
   String response;
   String number = "";
   response = waitResponse();
-  if (response.indexOf("+CMT") > -1 && response.indexOf("+79202979541") > -1) number = "+79202979541";
-  if (response.indexOf("+CMT") > -1 && response.indexOf("+79503422666") > -1) number = "+79503422666";
+  Serial.println("Current response: " + response);
+  if (response.indexOf("+CM") > -1) {
+    number = response.substring(response.indexOf("+7"), response.indexOf("+7") + 12);
+  }
   return number;
 }
 
@@ -99,7 +101,7 @@ String GSM::sendATCommand(String value)
 String GSM::waitResponse()
 {
   String resp = "";
-  long timeout = millis() + 10000;
+  unsigned long timeout = millis() + 10000;
   while (!this->serialInterface->available() && millis() < timeout)
   {
   };
@@ -111,8 +113,9 @@ String GSM::waitResponse()
 }
 void GSM::sendSMS(String phone, String message)
 {
-  sendATCommand("AT+CMGS=\"" + phone + "\"");
-  sendATCommand(message + "\r\n" + (String)((char)26));
+  //String balance = this->sendATCommand("ATD#100#");
+  this->sendATCommand("AT+CMGS=\"" + phone + "\"");
+  this->sendATCommand(message + "\r\n" + (String)((char)26));
 }
 
 
