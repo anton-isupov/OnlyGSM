@@ -30,6 +30,7 @@ void setup() {
     }
 }
 void loop() {
+    gsm.run();
     if (gsm.onResponse()) {
         String number = gsm.getNumber();
         String result = gsm.getResponse();

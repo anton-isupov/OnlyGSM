@@ -37,32 +37,10 @@ bool GSM::onResponse() {
 }
 
 String GSM::getResponse() {
-  String response;
-  String result;
-    response = waitResponse();
-    response.trim();
-
-    if (response.startsWith("+CIEV:"))
-    {
-
-      int index = response.lastIndexOf("\"");
-      result = response.substring(index + 1, response.length());
-      result.trim();
-      // if (result.equals("testred")) digitalWrite(8,!digitalRead(8)); Делаем что-то в зависимости от сообщения
-
-      sendATCommand("AT+CMGD=4"); // Удалить все сообщения
-    }
-  return result;
+  return resultResponse;
 }
 
 String GSM::getNumber() {
-  String response;
-  String number = "";
-  response = waitResponse();
-  Serial.println("Current response: " + response);
-  if (response.indexOf("+CM") > -1) {
-    number = response.substring(response.indexOf("+7"), response.indexOf("+7") + 12);
-  }
   return number;
 }
 
@@ -72,13 +50,16 @@ void GSM::run()
   {
     String response = waitResponse();
     response.trim();
+    if (response.indexOf("+CM") > -1) {
+    number = response.substring(response.indexOf("+7"), response.indexOf("+7") + 12);
+    }
 
     if (response.startsWith("+CIEV:"))
     {
 
       int index = response.lastIndexOf("\"");
-      String result = response.substring(index + 1, response.length());
-      result.trim();
+      resultResponse = response.substring(index + 1, response.length());
+      resultResponse.trim();
       // if (result.equals("testred")) digitalWrite(8,!digitalRead(8)); Делаем что-то в зависимости от сообщения
 
       sendATCommand("AT+CMGD=4"); // Удалить все сообщения
