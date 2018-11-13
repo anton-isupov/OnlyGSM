@@ -39,7 +39,7 @@ void loop() {
 
         if (result.equals("startHeat") && checkNumberPermission(number)) {
             digitalWrite(RELE_START_HEAT_PIN,HIGH);
-            delay(500);
+            delayUpgrate(500);
             digitalWrite(RELE_START_HEAT_PIN, LOW);
             gsm.sendSMS(number,"Pressed startHeat");
         }
@@ -74,4 +74,8 @@ void doActionForEachNumber(void (*callback)(String, String), String message) {
 static void sendMessage(String phone, String message) {
     gsm.sendSMS(phone, message);
     delay(3000);
+}
+void delayUpgrate(int time) {
+int borderTime = millis();
+while (millis() - borderTime < time) {}
 }
