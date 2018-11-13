@@ -29,8 +29,21 @@ void setup() {
         doActionForEachNumber(sendMessage, "Ready to start");
     }
 }
+
+bool lowTemp = true;
 void loop() {
     gsm.run();
+    int currentTemperature = sensor.getTemperature();
+    if (currentTemperature < 3 && lowTemp == true) {
+        doActionForEachNumber(sendMessage, "current temperature < 3");
+        lowTemp = false;
+    }
+
+    if (currentTemperature > 3 && lowTemp == false) {
+        doActionForEachNumber(sendMessage, "current temperature > 3");
+        lowTemp = true;
+    }
+
     if (gsm.onResponse()) {
         String number = gsm.getNumber();
         String result = gsm.getResponse();
@@ -73,7 +86,7 @@ void doActionForEachNumber(void (*callback)(String, String), String message) {
 
 static void sendMessage(String phone, String message) {
     gsm.sendSMS(phone, message);
-    delay(3000);
+    delayUpgrate(3000);
 }
 void delayUpgrate(int time) {
 int borderTime = millis();
