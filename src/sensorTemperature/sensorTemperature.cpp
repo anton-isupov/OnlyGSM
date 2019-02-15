@@ -1,7 +1,7 @@
 #include "sensorTemperature.h"
 
 sensorTemperature::sensorTemperature(uint8_t pin) {
-unitPin = pin;
+    unitPin = pin;
 }
 
 sensorTemperature::~sensorTemperature() {}
