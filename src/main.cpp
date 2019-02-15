@@ -35,7 +35,21 @@ void setup() {
         doActionForEachNumber(sendMessage, "Controller are ready");
     }
 }
+
+bool lowTemp = true;
 void loop() {
+    gsm.run();
+    int currentTemperature = sensor.getTemperature();
+    if (currentTemperature < 3 && lowTemp == true) {
+        doActionForEachNumber(sendMessage, "current temperature < 3");
+        lowTemp = false;
+    }
+
+    if (currentTemperature > 3 && lowTemp == false) {
+        doActionForEachNumber(sendMessage, "current temperature > 3");
+        lowTemp = true;
+    }
+
     if (gsm.onResponse()) {
         String result = gsm.getResponse();
         Serial.println(result);
@@ -87,12 +101,4 @@ void doActionForEachNumber(void (*callback)(String, String), String message) {
 static void sendMessage(String phone, String message) {
     gsm.sendSMS(phone, message);
     delay(3000);
-}
-
-String buildResponseMessage(String airTemperature, String burnTemperature, String burnMachinePower, String burnMachineHeating) {
-    String controllerResponse = "{\"airTemperature\": \""+ airTemperature +
-        "\", \"burnTemperature\": \""+ burnTemperature +
-        "\", \"burnMachinePower\": \""+ burnMachinePower +
-        "\", \"burnMachineHeating\": \""+ burnMachineHeating +"\"}";
-    return controllerResponse;
 }

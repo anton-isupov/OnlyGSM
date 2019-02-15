@@ -18,6 +18,8 @@ class GSM : public ExtendedHardwareUnit {
         String getResponse();
         String getNumber();
     private:
+        String resultResponse;
+        String number;
         String sendATCommand(String value);
         String waitResponse();
         void setRxTx(uint8_t Rx, uint8_t Tx);
