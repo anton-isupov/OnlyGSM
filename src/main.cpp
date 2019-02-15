@@ -102,3 +102,11 @@ static void sendMessage(String phone, String message) {
     gsm.sendSMS(phone, message);
     delay(3000);
 }
+
+String buildResponseMessage(String airTemperature, String burnTemperature, String burnMachinePower, String burnMachineHeating) {
+    String controllerResponse = "{\"airTemperature\": \""+ airTemperature +
+        "\", \"burnTemperature\": \""+ burnTemperature +
+        "\", \"burnMachinePower\": \""+ burnMachinePower +
+        "\", \"burnMachineHeating\": \""+ burnMachineHeating +"\"}";
+    return controllerResponse;
+}
