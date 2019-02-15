@@ -19,6 +19,8 @@ GSM gsm(10,11);
 sensorTemperature sensor(6);
 sensorTemperature sensorAir(5);
 String heatingStarted;
+String controllerPassword = "PSWDValki06021991!@";
+String commandSign = "&CMD=";
 
 void setup() {
     Serial.begin(38400);
@@ -39,38 +41,29 @@ void setup() {
 bool lowTemp = true;
 void loop() {
     gsm.run();
-    int currentTemperature = sensor.getTemperature();
-    if (currentTemperature < 3 && lowTemp == true) {
-        doActionForEachNumber(sendMessage, "current temperature < 3");
-        lowTemp = false;
-    }
-
-    if (currentTemperature > 3 && lowTemp == false) {
-        doActionForEachNumber(sendMessage, "current temperature > 3");
-        lowTemp = true;
-    }
 
     if (gsm.onResponse()) {
         String result = gsm.getResponse();
         Serial.println(result);
         Serial.println(gsm.getResponse());
 
-        if (result.equals("PSWD06021991&COM=heatPowerOn")) {
+        if (result.equals(controllerPassword + commandSign + "heatPowerOn")) {
             digitalWrite(RELE_POWER_HEAT_PIN,HIGH);
             getStatus();
         }
-        if (result.equals("PSWD06021991&COM=heatPowerOff")) {
+        if (result.equals(controllerPassword + commandSign + "heatPowerOff")) {
+            heatingStarted = "OFF";
             digitalWrite(RELE_POWER_HEAT_PIN,LOW);
             getStatus();
         }
-        if (result.equals("PSWD06021991&COM=startBurn")) {
+        if (result.equals(controllerPassword + commandSign + "startBurn")) {
             digitalWrite(RELE_START_HEAT_PIN,HIGH);
             delay(500);
             digitalWrite(RELE_START_HEAT_PIN, LOW);
             heatingStarted = "ON";
             getStatus();
         }
-        if (result.equals("PSWD06021991&COM=getStatus")) {
+        if (result.equals(controllerPassword + commandSign + "getStatus")) {
             getStatus();
         }
     }
