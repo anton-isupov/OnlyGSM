@@ -8,8 +8,7 @@
 
 class GSM : public ExtendedHardwareUnit {
     public:
-        GSM(uint8_t Rx, uint8_t Tx);
-        ~GSM();        
+        GSM(uint8_t Rx, uint8_t Tx);   
         void setup();
         void run();
         void sendSMS(String phone, String message);
@@ -18,6 +17,7 @@ class GSM : public ExtendedHardwareUnit {
         String getResponse();
         String getNumber();
     private:
+        bool responseAvailable;
         String resultResponse;
         String number;
         String sendATCommand(String value);

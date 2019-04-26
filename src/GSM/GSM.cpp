@@ -1,68 +1,75 @@
 
 #include "GSM.h"
 
-GSM::GSM(uint8_t Rx, uint8_t Tx) {
+GSM::GSM(uint8_t Rx, uint8_t Tx)
+{
   this->setRxTx(Rx, Tx);
   this->serialInterface = new SoftwareSerial(Rx, Tx);
 }
 
-void GSM::setRxTx(uint8_t Rx, uint8_t Tx) {
+void GSM::setRxTx(uint8_t Rx, uint8_t Tx)
+{
   this->Rx = Rx;
   this->Tx = Tx;
 }
 
 void GSM::setup()
 {
-  this->serialInterface->begin(38400);
+  this->serialInterface->begin(9600);
+  pinMode(7, OUTPUT);
+  delay(100);
+  digitalWrite(7, HIGH);
 }
 
-bool GSM::onReady() {
+bool GSM::onReady()
+{
   bool val = false;
   String response;
   response = sendATCommand("AT+CMGF=1;&W");
-  while(response.indexOf("OK") < 0) {
-     response = sendATCommand("AT+CMGF=1;&W"); 
-     Serial.println(response);    
+  while (response.indexOf("OK") < 0)
+  {
+    response = sendATCommand("AT+CMGF=1;&W");
   }
   val = true;
   return val;
 }
 
-bool GSM::onResponse() {
-  bool val = false;
-  if (this->serialInterface->available()) {
-    val = true;
-  }
-  return val;
+bool GSM::onResponse()
+{
+  return responseAvailable;
 }
 
-String GSM::getResponse() {
+String GSM::getResponse()
+{
   return resultResponse;
 }
 
-String GSM::getNumber() {
+String GSM::getNumber()
+{
   return number;
 }
 
 void GSM::run()
 {
+  responseAvailable = false;
+  resultResponse = "";
+  number = "";
   if (this->serialInterface->available())
   {
     String response = waitResponse();
     response.trim();
-    if (response.indexOf("+CM") > -1) {
-    number = response.substring(response.indexOf("+7"), response.indexOf("+7") + 12);
-    }
-
-    if (response.startsWith("+CIEV:"))
+    if (response.startsWith("+CIEV: \"MESSAGE\""))
     {
-
+      responseAvailable = true;
+      int phoneIndex = response.indexOf("+CMT:");
+      response = response.substring(phoneIndex + 5, response.length());
+      String phoneRow = response.substring(response.indexOf("+"), response.indexOf("+") + 12);
+      phoneRow.trim();
+      number = phoneRow;
       int index = response.lastIndexOf("\"");
       resultResponse = response.substring(index + 1, response.length());
       resultResponse.trim();
-      // if (result.equals("testred")) digitalWrite(8,!digitalRead(8)); Делаем что-то в зависимости от сообщения
-
-      sendATCommand("AT+CMGD=4"); // Удалить все сообщения
+      sendATCommand("AT+CMGD=4");
     }
   }
 }
@@ -97,9 +104,4 @@ void GSM::sendSMS(String phone, String message)
   //String balance = this->sendATCommand("ATD#100#");
   this->sendATCommand("AT+CMGS=\"" + phone + "\"");
   this->sendATCommand(message + "\r\n" + (String)((char)26));
-}
-
-
-GSM::~GSM() {
-  Serial.print("Bye bye");
 }

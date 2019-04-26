@@ -7,7 +7,6 @@
 class sensorTemperature : public SimpleHardwareUnit {
     public:
         sensorTemperature(uint8_t pin);
-        ~sensorTemperature();
         void setup();
         float getTemperature();
     private:
