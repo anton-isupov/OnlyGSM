@@ -4,6 +4,7 @@
 
 const uint8_t RELE_START_HEAT_PIN = 8;
 const uint8_t RELE_POWER_HEAT_PIN = 9;
+const uint8_t WASH_SYSTEM_PIN = 3;
 
 const uint8_t SOFT_RESET_PIN = 4;
 
@@ -15,23 +16,32 @@ void doActionForEachNumber(void (*callback)(String, String), String message);
 static void sendMessage(String phone, String message);
 void getStatus(String requestorPhone, String tempAir, String temp);
 String buildResponseMessage(String airTemperature, String burnTemperature, String burnMachinePower, String burnMachineHeating);
+void(* resetFunc) (void) = 0;
 
 GSM gsm(10,11);
 sensorTemperature sensor(6);
 sensorTemperature sensorAir(2);
 String heatingStarted;
+bool washSystemStarted;
+bool burnPowerOn;
+unsigned long WASH_SYSTEM_TIMEOUT = 300000;
+unsigned long washSystemStartedTime = 0;
 const PROGMEM String controllerPassword = "PSWDValki0602199132";
 const PROGMEM String commandSign = "&CMD=";
 
 void setup() {
-    digitalWrite(SOFT_RESET_PIN, HIGH);
     delay(200);
     Serial.begin(9600);
     sensor.setup();
     sensorAir.setup();
     pinMode(RELE_START_HEAT_PIN, OUTPUT);
     pinMode(RELE_POWER_HEAT_PIN, OUTPUT);
-    pinMode(SOFT_RESET_PIN, OUTPUT);
+    pinMode(WASH_SYSTEM_PIN, OUTPUT);
+    digitalWrite(WASH_SYSTEM_PIN, LOW);
+    digitalWrite(RELE_POWER_HEAT_PIN, LOW);
+
+    washSystemStarted = false;
+    burnPowerOn = false;
     
     heatingStarted = "OFF";
     gsm.setup();
@@ -43,6 +53,10 @@ void setup() {
 
 void loop() {
     gsm.run();
+    if(washSystemStarted && (millis() - washSystemStartedTime > WASH_SYSTEM_TIMEOUT)) {
+        digitalWrite(WASH_SYSTEM_PIN,LOW);
+        washSystemStarted = false;
+    }
 
     if (gsm.onResponse()) {
         const String result = gsm.getResponse();
@@ -57,12 +71,27 @@ void loop() {
             if (result.equals(controllerPassword + commandSign + "burnPowerOn")) {
                 digitalWrite(RELE_POWER_HEAT_PIN,HIGH);
                 delay(500);
+                burnPowerOn = true;
+                getStatus(requestPhone, tempAir, temp);
+            }
+            if (result.equals(controllerPassword + commandSign + "washSystemOn")) {
+                digitalWrite(WASH_SYSTEM_PIN,HIGH);
+                delay(500);
+                washSystemStartedTime = millis();
+                washSystemStarted = true;
+                getStatus(requestPhone, tempAir, temp);
+            }
+            if (result.equals(controllerPassword + commandSign + "washSystemOff")) {
+                digitalWrite(WASH_SYSTEM_PIN,LOW);
+                delay(500);
+                washSystemStarted = false;
                 getStatus(requestPhone, tempAir, temp);
             }
             if (result.equals(controllerPassword + commandSign + "burnPowerOff")) {
                 digitalWrite(RELE_POWER_HEAT_PIN,LOW);
                 delay(500);
                 heatingStarted = "OFF";
+                burnPowerOn = false;
                 getStatus(requestPhone, tempAir, temp);
             }
             if (result.equals(controllerPassword + commandSign + "burnStartHeating")) {
@@ -76,7 +105,7 @@ void loop() {
                 getStatus(requestPhone, tempAir, temp);
             }
             if (result.equals(controllerPassword + commandSign + "softReset")) {
-                digitalWrite(SOFT_RESET_PIN, LOW);
+                resetFunc();
             }
         }
     }
@@ -84,10 +113,9 @@ void loop() {
 
 void getStatus(String requestorPhone, String tempAir, String temp) {
     String powerStatus;
-    int power = digitalRead(RELE_POWER_HEAT_PIN);
-    if(power == HIGH) {
+    if(burnPowerOn) {
         powerStatus = "ON";
-    } else if(power == LOW) {
+    } else {
         powerStatus = "OFF";
     }
     const String response = buildResponseMessage(tempAir, temp, powerStatus, heatingStarted);
@@ -109,6 +137,7 @@ String buildResponseMessage(String airTemperature, String burnTemperature, Strin
     String controllerResponse = "{\"airTemperature\": \""+ airTemperature +
         "\", \"burnTemperature\": \""+ burnTemperature +
         "\", \"burnMachinePower\": \""+ burnMachinePower +
+        "\", \"washSystemPower\": \""+ (washSystemStarted ? "ON" : "OFF") +
         "\", \"burnMachineHeating\": \""+ burnMachineHeating +"\"}";
     return controllerResponse;
 }
